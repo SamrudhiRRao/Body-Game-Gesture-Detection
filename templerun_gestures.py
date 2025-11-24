@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 import mediapipe as mp
 
+import csv
+
 import pyautogui
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
@@ -13,8 +15,23 @@ pyautogui.PAUSE = 0
 # Smoothing & debounce
 EMA_ALPHA = 0.35
 COOLDOWN_S = 0.8
+EVENT_LOG = []
 SHOW_DEBUG = True
 
+# evaluation
+EVAL_MODE = True  # False for normal play
+
+# 5 times each gesture
+SCRIPTED_GESTURES = (
+    ["jump"] * 5 +
+    ["duck"] * 5 +
+    ["left"] * 5 +
+    ["right"] * 5
+)
+
+STEP_DURATION = 2.0  # 2 seconds per gesture for now
+
+GROUND_TRUTH_STEPS = []   # "index": int, "gesture": str, "t_start": float, "t_end": float | None
 
 HANDS_ABOVE_SHOULDERS_DELTA = 0.02   # how far above shoulders wrists must be
 CROUCH_TORSO_RATIO = 0.62            # nose-to-hip distance / standing reference below this duck
@@ -82,10 +99,14 @@ def main():
         smooth_landmarks=True
     ) as holistic:
 
+        eval_start_time = time.time()
+        current_step_index = -1
+
         while True:
             ok, frame = cap.read()
             if not ok:
                 break
+            frame_ts = time.time()
 
             frame = cv2.flip(frame, 1)
             h, w, _ = frame.shape
@@ -145,29 +166,99 @@ def main():
 
                     now = time.time()
 
+                    # ground truth
+                    if EVAL_MODE:
+                        t_eval = now - eval_start_time
+                        total_steps = len(SCRIPTED_GESTURES)
+
+                        step_index = int(t_eval // STEP_DURATION)
+
+                        if step_index >= total_steps:
+                            if current_step_index >= 0 and GROUND_TRUTH_STEPS:
+                                if GROUND_TRUTH_STEPS[-1]["t_end"] is None:
+                                    GROUND_TRUTH_STEPS[-1]["t_end"] = now
+                            # evaluation done
+                            cv2.putText(
+                                frame,
+                                "EVAL DONE - PRESS 'q' TO EXIT",
+                                (30, 50),
+                                cv2.FONT_HERSHEY_SIMPLEX,
+                                0.8,
+                                (0, 0, 255),
+                                2
+                            )
+                        else:
+                            if step_index != current_step_index:
+                                # close previous step
+                                if current_step_index >= 0 and GROUND_TRUTH_STEPS:
+                                    if GROUND_TRUTH_STEPS[-1]["t_end"] is None:
+                                        GROUND_TRUTH_STEPS[-1]["t_end"] = now
+
+                                current_step_index = step_index
+                                gt_gesture = SCRIPTED_GESTURES[step_index]
+                                GROUND_TRUTH_STEPS.append({
+                                    "index": step_index,
+                                    "gesture": gt_gesture,
+                                    "t_start": now,
+                                    "t_end": None,
+                                })
+                                print(f"[GT] Step {step_index}: please do {gt_gesture}")
+
+                            # Small msg to tell what to do now
+                            gt_gesture = SCRIPTED_GESTURES[step_index]
+                            text = f"DO NOW: {gt_gesture.upper()}"
+
+                            cv2.rectangle(frame, (10, 10), (340, 80), (0, 0, 0), -1)
+                            cv2.putText(
+                                frame,
+                                text,
+                                (20, 55),
+                                cv2.FONT_HERSHEY_SIMPLEX,
+                                0.9,
+                                (0, 255, 255),
+                                2
+                            )
+
                     # Jump if both hands above shoulders
                     left_up = wl_sm < (shy_sm - HANDS_ABOVE_SHOULDERS_DELTA)
                     right_up = wr_sm < (shy_sm - HANDS_ABOVE_SHOULDERS_DELTA)
                     wrists_above = (left_up and right_up) if REQUIRE_BOTH_HANDS_FOR_JUMP else (left_up or right_up)
 
                     if wrists_above and (now - last_trigger_time["jump"] >= COOLDOWN_S):
+                        #lag_ms = (time.time() - frame_ts) * 1000.0
+                        lag_ms = (time.time() - frame_ts) * 1000.0 if "frame_ts" in locals() else 0.0
                         press("up")
                         last_trigger_time["jump"] = now
+                        EVENT_LOG.append({"gesture": "jump", "time": now, "lag_ms": lag_ms})
+                        print(f"[EVENT] jump | lag={lag_ms:.1f} ms")
 
                     # Duck if torso length shrinks vs standing reference
                     if standing_torso_ref is not None:
                         ratio = torso_sm / standing_torso_ref
                         if ratio < CROUCH_TORSO_RATIO and (now - last_trigger_time["duck"] >= COOLDOWN_S):
+                            #lag_ms = (time.time() - frame_ts) * 1000.0
+                            lag_ms = (time.time() - frame_ts) * 1000.0 if "frame_ts" in locals() else 0.0
                             press("down")
                             last_trigger_time["duck"] = now
+                            EVENT_LOG.append({"gesture": "duck", "time": now, "lag_ms": lag_ms})
+                            print(f"[EVENT] duck | lag={lag_ms:.1f} ms")
 
                     # Left / Right
                     if dx_sm <= -LEAN_THRESH and (now - last_trigger_time["left"] >= COOLDOWN_S):
+                        #lag_ms = (time.time() - frame_ts) * 1000.0
+                        lag_ms = (time.time() - frame_ts) * 1000.0 if "frame_ts" in locals() else 0.0
                         press("left")
                         last_trigger_time["left"] = now
+                        EVENT_LOG.append({"gesture": "left", "time": now, "lag_ms": lag_ms})
+                        print(f"[EVENT] left | lag={lag_ms:.1f} ms")
+
                     elif dx_sm >= LEAN_THRESH and (now - last_trigger_time["right"] >= COOLDOWN_S):
+                        #lag_ms = (time.time() - frame_ts) * 1000.0
+                        lag_ms = (time.time() - frame_ts) * 1000.0 if "frame_ts" in locals() else 0.0
                         press("right")
                         last_trigger_time["right"] = now
+                        EVENT_LOG.append({"gesture": "right", "time": now, "lag_ms": lag_ms})
+                        print(f"[EVENT] right | lag={lag_ms:.1f} ms")
 
                     if SHOW_DEBUG:
                         mp_drawing.draw_landmarks(
@@ -203,8 +294,76 @@ def main():
             if key == ord('q'):
                 break
 
-    cap.release()
-    cv2.destroyAllWindows()
+        if EVENT_LOG:
+            with open("gesture_events.csv", "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["gesture", "event_time", "lag_ms"])
+                for e in EVENT_LOG:
+                    writer.writerow([e["gesture"], e["time"], e["lag_ms"]])
+            print("Saved gesture_events.csv")
+
+
+        if EVAL_MODE and GROUND_TRUTH_STEPS:
+            if GROUND_TRUTH_STEPS[-1]["t_end"] is None:
+                GROUND_TRUTH_STEPS[-1]["t_end"] = time.time()
+
+        # evaluating accuracy
+        if EVAL_MODE:
+            from collections import Counter, defaultdict
+
+            if not GROUND_TRUTH_STEPS:
+                print("No ground truth steps recorded.")
+            else:
+                print("\nEVALUATION RESULTS : ")
+
+                correct = 0
+                total = 0
+                confusion = defaultdict(lambda: Counter())
+
+                events = EVENT_LOG
+
+                for step in GROUND_TRUTH_STEPS:
+                    gt = step["gesture"]
+                    t0 = step["t_start"]
+                    t1 = step["t_end"] or (t0 + STEP_DURATION)
+
+                    step_events = [e for e in events if t0 <= e["time"] < t1]
+
+                    if not step_events:
+                        pred = "none"
+                    else:
+                        pred = step_events[0]["gesture"]
+
+                    confusion[gt][pred] += 1
+                    total += 1
+                    if pred == gt:
+                        correct += 1
+
+                acc = correct / total if total > 0 else 0.0
+                print(f"Total scripted gestures: {total}")
+                print(f"Correctly detected:     {correct}")
+                print(f"Accuracy:               {acc * 100:.1f}%\n")
+
+                print("Confusion matrix (gt -> predicted counts):")
+                for gt, row in confusion.items():
+                    print(f"{gt:>5} -> {dict(row)}")
+
+                with open("eval_ground_truth.csv", "w", newline="") as f:
+                    w = csv.writer(f)
+                    w.writerow(["index", "gesture", "t_start", "t_end"])
+                    for s in GROUND_TRUTH_STEPS:
+                        w.writerow([s["index"], s["gesture"], s["t_start"], s["t_end"]])
+
+                with open("eval_events.csv", "w", newline="") as f:
+                    w = csv.writer(f)
+                    w.writerow(["gesture", "time", "lag_ms"])
+                    for e in EVENT_LOG:
+                        w.writerow([e["gesture"], e["time"], e["lag_ms"]])
+
+                print("Saved eval_ground_truth.csv and eval_events.csv")
+
+        cap.release()
+        cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()
