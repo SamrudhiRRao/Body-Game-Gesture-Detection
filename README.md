@@ -13,3 +13,7 @@ pip install opencv-python mediapipe pyautogui numpy
 
 Run the templerun_gestures file with temple run game open on the side <br />
 python .\templerun_gestures.py
+
+# Current Evaluation Matrix
+
+![Current Evaluation Matrix](./accuracy_evaluation.png)
