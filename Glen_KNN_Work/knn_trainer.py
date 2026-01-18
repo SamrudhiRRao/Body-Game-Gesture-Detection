@@ -102,7 +102,7 @@ print("\nConfusion Matrix:")
 print(confusion_matrix(y_test, y_pred))
 
 # --- Step 5: Save the Model ---
-model_filename = "knn_gesture_model.pkl"
+model_filename = "knn_gesture_model2.pkl"
 joblib.dump(model, model_filename)
 print(f"Model saved to {model_filename}")
 

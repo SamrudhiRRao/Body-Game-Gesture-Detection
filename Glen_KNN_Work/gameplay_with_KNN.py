@@ -8,7 +8,7 @@ from collections import deque, Counter
 # ==========================================
 # CONFIGURATION
 # ==========================================
-MODEL_PATH = "optimized_karate_model.pkl"
+MODEL_PATH = "karate_model_new.pkl"
 CONFIDENCE_THRESHOLD = 0.5
 
 # The same 12 landmarks used in training
@@ -23,7 +23,7 @@ KEY_MAP = {
     "high_punch": "i",    # Both punches hit 'J'
     
     "strong_kick": "k",
-    "high_kick": "k",     # Both kicks hit 'K'
+    "high_kick": "j",     # Both kicks hit 'K'
     
     "hit_combo": "u",     # Special move
     

@@ -6,66 +6,88 @@ This project uses computer vision and machine learning to control a karate game 
 
 Ensure you have Python installed along with the required libraries:
 ```
-pip install opencv-python mediapipe numpy joblib pandas scikit-learn pydirectinput
+pip install opencv-python mediapipe pandas numpy scikit-learn joblib pydirectinput
 ```
 
-🚀 Usage Instructions
+## 🚀 Usage Instructions
 
-Step 1: Train the Model
+Follow these three steps to set up and run the controller.
 
-Before running any gesture recognition, you must generate the model file.
+### Step 1: Data Collection
+First, you need to record your own body gestures to create the dataset.
 
-Script: optimized_trainer.py
+1. Run the collection script:
 
-Input: Requires karate_optimized_data.csv (your dataset) in the same directory.
+```
+python optimized_collection.py
+```
+2. Select a Gesture: Press `N` to toggle between gestures (e.g., Punch, Kick, Jump).
 
-Action: Run this script to train the K-Nearest Neighbors (KNN) classifier.
+3. Record: Press `SPACE` to start.
+    - The system acts as a 10-second timer.
+    - After a 3-second countdown, perform the gesture continuously for 10 seconds.
 
-Output: Generates optimized_karate_model.pkl.
+4. Repeat this for all 8 gestures to populate `karate_optimized_data.csv`
+
+
+
+
+### Step 2: Train the Model
+
+Once the data is collected, train the machine learning model.
+
+1. Run the training script:
+
+
 ```
 python optimized_trainer.py
 ```
+2. This script processes the CSV file, trains a KNN classifier, and exports the weights to `optimized_karate_model.pkl`.
 
-Step 2: Run the Game Controller (Main Mode)
+3. Note: Ensure the `.pkl` file is saved in the same directory as the gameplay script.
 
-This is the primary script for playing the game.
 
-Script: gameplay_with_KNN.py
+### Step 3: Run the Controller
 
-Function: Loads the trained model, detects your gestures, and simulates actual key presses to control your game character.
+Now you are ready to play.
 
-### Controls:
-### Punch: L (Low), I (High)
-### Kick:  K
-### Move:  W (Jump), S (Crouch), A (Left), D (Right)
-### Combo: U
+1. Open your target game in a web browser (e.g., Karate Fighter).
+
+2. Run the gameplay script:
+
+
 ```
 python gameplay_with_KNN.py
 ```
 
-Note: Switch focus to your game window immediately after running this script.
+3. Focus the Window: Click on the game window once to ensure it receives keyboard inputs.
 
-Step 3: View Performance Metrics (Additional Mode)
+4. Stand back and control the character with your movements!
 
-This script is an additional tool for testing and visualization. It relies on the same logic and model as the gameplay script but does not press keys.
+## 🎮 Controls
 
-Script: new_live_metrics.py
+The system maps the following physical gestures to keyboard keys:
 
-Function: Displays a futuristic HUD showing system performance including:
+| Gesture | Key Mapped | Action |
+| ---------- | ---------- | ---------- |
+| Extend both arms to the sides|W|Character Jumps|
+| Crouch|S|Character Crouches|
+| Extend Arm to Left|A|Move Left|
+| Extend Arm to Right|D|Move Right|
+| Make a Fist with Left or Right|L|Low Punch|
+| Make a Fist with both Left and Right|I|High Punch|
+| Lift and Extend Right Leg Forward|K|Strong Kick Attack|
+| Lift Left Leg just above ground| J |High Kick Attack|
+| Wakanda Forever| U |Combo Hit|
+| Stand straight with Arms Extended down|-|No Move, Stays Idle|
 
-FPS (Frames Per Second): Monitors video smoothness.
+### Demonstration Video
+<video width="630" height="300" src="C:\Users\LOQ\OneDrive\Desktop\codes\Applied AI Engineering Lab\Body-Game-Gesture-Detection\Glen_KNN_Work\Demostration.mp4" controls></video>
 
-Latency: Measures processing delay in milliseconds.
+## ⚠️ Troubleshooting
 
-Confidence: Visual bar showing how sure the model is of your pose.
+- Camera not opening? Ensure no other application (Zoom, Teams) is using the webcam.
 
-Use Case: Run this to debug lag or accuracy issues without triggering game inputs.
-```
-python new_live_metrics.py
-```
+- Model not found? Verify that optimized_karate_model.pkl exists in the root folder before running the gameplay script.
 
-⚠️ Troubleshooting
-
-FileNotFoundError: If you see Error: Could not find optimized_karate_model.pkl, ensure you have run optimized_trainer.py first.
-
-Lighting: Ensure your room is well-lit so MediaPipe can accurately detect your body landmarks.
+- Low Accuracy? Try re-running Step 1 and recording more diverse samples for the problematic gesture.

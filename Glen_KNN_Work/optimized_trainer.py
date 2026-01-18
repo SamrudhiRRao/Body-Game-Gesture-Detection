@@ -5,7 +5,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 
 print("Loading optimized data...")
-df = pd.read_csv("karate_optimized_data.csv")
+df = pd.read_csv("karate_optimized_data2.csv")
 
 X = df.drop('label', axis=1)
 y = df['label']
@@ -19,5 +19,5 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 print(f"Accuracy: {accuracy_score(y_test, y_pred) * 100:.2f}%")
 
-joblib.dump(model, "optimized_karate_model.pkl")
-print("Saved to 'optimized_karate_model.pkl'")
+joblib.dump(model, "karate_model_new.pkl")
+print("Saved to 'karate_model_new.pkl'")
