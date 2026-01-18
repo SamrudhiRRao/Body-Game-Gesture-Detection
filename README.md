@@ -82,7 +82,7 @@ The system maps the following physical gestures to keyboard keys:
 | Stand straight with Arms Extended down|-|No Move, Stays Idle|
 
 ### Demonstration Video
-<video width="630" height="300" src="C:\Users\LOQ\OneDrive\Desktop\codes\Applied AI Engineering Lab\Body-Game-Gesture-Detection\Glen_KNN_Work\Demostration.mp4" controls></video>
+<video width="630" height="300" src="Demostration.mp4" controls></video>
 
 ## ⚠️ Troubleshooting
 
