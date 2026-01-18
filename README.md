@@ -81,8 +81,8 @@ The system maps the following physical gestures to keyboard keys:
 | Wakanda Forever| U |Combo Hit|
 | Stand straight with Arms Extended down|-|No Move, Stays Idle|
 
-### Demonstration Video
-<video width="630" height="300" src="Demostration.mp4" controls></video>
+### 🎬 Demonstration Video
+https://drive.google.com/file/d/1lTuqTSe5ODM5KuVjWyF_74F4nHisOm5g/view?usp=sharing
 
 ## ⚠️ Troubleshooting
 
