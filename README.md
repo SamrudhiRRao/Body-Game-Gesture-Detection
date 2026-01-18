@@ -82,7 +82,8 @@ The system maps the following physical gestures to keyboard keys:
 | Stand straight with Arms Extended down|-|No Move, Stays Idle|
 
 ### 🎬 Demonstration Video
-https://drive.google.com/file/d/1lTuqTSe5ODM5KuVjWyF_74F4nHisOm5g/view?usp=sharing
+▶️ [Watch Demo Video]([https://drive.google.com/your-link-here](https://drive.google.com/file/d/1lTuqTSe5ODM5KuVjWyF_74F4nHisOm5g/view?usp=sharing))
+
 
 ## ⚠️ Troubleshooting
 
